@@ -1,5 +1,6 @@
 package com.gabriellabritz.build_finance_api.domain.user;
 
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,4 +43,10 @@ public class User {
     @LastModifiedDate
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    public User(AuthRegisterRequestDto authRegisterRequestDto, String passwordEncoded) {
+        this.name = authRegisterRequestDto.name();
+        this.email = authRegisterRequestDto.email();
+        this.password = passwordEncoded;
+    }
 }
