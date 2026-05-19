@@ -1,6 +1,7 @@
 package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +20,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody @Valid AuthRegisterRequestDto authRegisterRequestDto) {
-        authService.register(authRegisterRequestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<AuthRegisterResponseDto> register(@RequestBody @Valid AuthRegisterRequestDto authRegisterRequestDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(authRegisterRequestDto));
     }
 }

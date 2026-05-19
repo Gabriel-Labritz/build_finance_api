@@ -29,4 +29,22 @@ public class EmailVerificationToken {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    public EmailVerificationToken(User user) {
+        this.token = UUID.randomUUID().toString();
+        this.expiresAt = LocalDateTime.now().plusHours(24);
+        this.user = user;
+    }
+
+    public void markAsUsed() {
+        this.used = true;
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(this.expiresAt);
+    }
+
+    public boolean isValid() {
+        return !this.used && !isExpired();
+    }
 }
