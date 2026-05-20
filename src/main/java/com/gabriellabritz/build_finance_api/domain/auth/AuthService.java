@@ -2,12 +2,14 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
 import com.gabriellabritz.build_finance_api.infra.email.EmailService;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,5 +41,17 @@ public class AuthService {
 
         emailService.sendEmailVerification(user, emailVerificationToken);
         return new AuthRegisterResponseDto("Cadastro realizado com sucesso! Verifique seu email para ativar a conta.");
+    }
+
+    @Transactional
+    public VerifiedUserResponseDto verifyAccount(String token) {
+        EmailVerificationToken verificationToken = emailVerificationTokenRepository
+                .findByToken(token).orElseThrow(() -> new InvalidVerificationTokenException("Token de verificação inválido."));
+
+        verificationToken.validate();
+        verificationToken.getUser().verify();
+        emailVerificationTokenRepository.delete(verificationToken);
+
+        return new VerifiedUserResponseDto("Sua conta foi verificada com sucesso!, Você já pode fazer o login para começar a organizar suas finanças");
     }
 }

@@ -97,7 +97,7 @@ class AuthServiceTest {
                             token.getUser() != null &&
                                     token.getToken() != null &&
                                     !token.getToken().isBlank() &&
-                                    !token.isExpired()
+                                    token.isExpired()
                     ));
         }
 

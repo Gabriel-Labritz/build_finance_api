@@ -20,6 +20,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers("/auth/register").permitAll();
+                    req.requestMatchers("/auth/verify-account").permitAll();
                     req.anyRequest().authenticated();
                 })
                 .build();

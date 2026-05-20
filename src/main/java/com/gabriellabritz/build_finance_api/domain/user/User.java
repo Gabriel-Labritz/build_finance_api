@@ -1,6 +1,7 @@
 package com.gabriellabritz.build_finance_api.domain.user;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,5 +49,14 @@ public class User {
         this.name = authRegisterRequestDto.name();
         this.email = authRegisterRequestDto.email();
         this.password = passwordEncoded;
+    }
+
+    public void verify() {
+        if(this.verified) {
+            throw new UserAlreadyVerifiedException("O usuário já foi verificado.");
+        }
+
+        this.active = true;
+        this.verified = true;
     }
 }

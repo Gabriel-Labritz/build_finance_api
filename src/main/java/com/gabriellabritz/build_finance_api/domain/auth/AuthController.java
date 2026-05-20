@@ -2,13 +2,11 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -22,5 +20,10 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthRegisterResponseDto> register(@RequestBody @Valid AuthRegisterRequestDto authRegisterRequestDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(authRegisterRequestDto));
+    }
+
+    @GetMapping("/verify-account")
+    public ResponseEntity<VerifiedUserResponseDto> verifyAccount(@RequestParam String token) {
+        return ResponseEntity.ok().body(authService.verifyAccount(token));
     }
 }

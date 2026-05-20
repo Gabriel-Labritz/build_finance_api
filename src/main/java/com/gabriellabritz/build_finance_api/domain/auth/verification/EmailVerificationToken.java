@@ -1,6 +1,7 @@
 package com.gabriellabritz.build_finance_api.domain.auth.verification;
 
 import com.gabriellabritz.build_finance_api.domain.user.User;
+import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,9 +24,6 @@ public class EmailVerificationToken {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(nullable = false)
-    private Boolean used = false;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
@@ -36,15 +34,13 @@ public class EmailVerificationToken {
         this.user = user;
     }
 
-    public void markAsUsed() {
-        this.used = true;
-    }
-
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(this.expiresAt);
     }
 
-    public boolean isValid() {
-        return !this.used && !isExpired();
+    public void validate() {
+        if (isExpired()) {
+            throw new InvalidVerificationTokenException("Token de verificação expirado.");
+        }
     }
 }
