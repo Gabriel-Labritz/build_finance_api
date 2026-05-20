@@ -1,5 +1,8 @@
-package com.gabriellabritz.build_finance_api.infra.exceptions.auth;
+package com.gabriellabritz.build_finance_api.infra.exceptions;
 
+import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -30,6 +33,22 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleEmailAlreadyUsedException(EmailAlreadyUsedException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
         problemDetail.setTitle("Email já cadastrado.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidVerificationTokenException.class)
+    public ProblemDetail handleInvalidVerificationTokenException(InvalidVerificationTokenException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        problemDetail.setTitle("Token de verificação.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(UserAlreadyVerifiedException.class)
+    public ProblemDetail handleUserAlreadyVerifiedException(UserAlreadyVerifiedException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problemDetail.setTitle("Usuário verificado.");
 
         return problemDetail;
     }

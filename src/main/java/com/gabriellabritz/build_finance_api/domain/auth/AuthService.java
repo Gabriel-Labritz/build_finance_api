@@ -11,11 +11,14 @@ import com.gabriellabritz.build_finance_api.infra.email.EmailService;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AuthService {
+public class AuthService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
@@ -53,5 +56,11 @@ public class AuthService {
         emailVerificationTokenRepository.delete(verificationToken);
 
         return new VerifiedUserResponseDto("Sua conta foi verificada com sucesso!, Você já pode fazer o login para começar a organizar suas finanças");
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        return userRepository.findByEmailIgnoreCaseAndActiveTrueAndVerifiedTrue(username)
+                .orElseThrow(() -> new UsernameNotFoundException("O usuário não foi encontrado."));
     }
 }
