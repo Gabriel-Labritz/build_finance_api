@@ -3,6 +3,7 @@ package com.gabriellabritz.build_finance_api.infra.exceptions;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -67,6 +68,15 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleDisabledException(DisabledException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Conta inativa, verifique seu email para ativar sua conta.");
         problemDetail.setTitle("Conta inativa");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(JwtGenerationException.class)
+    public ProblemDetail handleJwtGenerationException(JwtGenerationException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Erro interno ao processar a autenticação. Tente novamente.");
+        problemDetail.setTitle("Erro interno");
 
         return problemDetail;
     }

@@ -2,8 +2,10 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
@@ -25,13 +27,21 @@ public class AuthService{
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailVerificationTokenRepository emailVerificationTokenRepository, EmailService emailService, AuthenticationManager authenticationManager) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
+            EmailService emailService,
+            AuthenticationManager authenticationManager,
+            JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.emailService = emailService;
         this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
     @Transactional
@@ -61,11 +71,16 @@ public class AuthService{
         return new VerifiedUserResponseDto("Sua conta foi verificada com sucesso!, Você já pode fazer o login para começar a organizar suas finanças");
     }
 
-    public void login(AuthLoginRequestDto authLoginRequestDto) {
+    public AuthLoginResponseDto login(AuthLoginRequestDto authLoginRequestDto) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(authLoginRequestDto.email(), authLoginRequestDto.password());
         Authentication authenticate = authenticationManager.authenticate(authenticationToken);
 
         User user = (User) authenticate.getPrincipal();
+
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+
+        return new AuthLoginResponseDto(accessToken, refreshToken);
     }
 }

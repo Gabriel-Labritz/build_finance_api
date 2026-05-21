@@ -21,9 +21,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
-                    req.requestMatchers("/auth/register").permitAll();
-                    req.requestMatchers("/auth/verify-account").permitAll();
-                    req.requestMatchers("/auth/sign-in").permitAll();
+                    req.requestMatchers("/auth/**").permitAll();
                     req.anyRequest().authenticated();
                 })
                 .build();

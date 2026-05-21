@@ -2,6 +2,7 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import jakarta.validation.Valid;
@@ -29,8 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/sign-in")
-    public ResponseEntity login(@RequestBody @Valid AuthLoginRequestDto authLoginRequestDto) {
-        authService.login(authLoginRequestDto);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<AuthLoginResponseDto> login(@RequestBody @Valid AuthLoginRequestDto authLoginRequestDto) {
+        return ResponseEntity.ok().body(authService.login(authLoginRequestDto));
     }
 }
