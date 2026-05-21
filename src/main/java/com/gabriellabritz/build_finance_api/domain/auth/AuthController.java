@@ -1,5 +1,6 @@
 package com.gabriellabritz.build_finance_api.domain.auth;
 
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
@@ -25,5 +26,11 @@ public class AuthController {
     @GetMapping("/verify-account")
     public ResponseEntity<VerifiedUserResponseDto> verifyAccount(@RequestParam String token) {
         return ResponseEntity.ok().body(authService.verifyAccount(token));
+    }
+
+    @PostMapping("/sign-in")
+    public ResponseEntity login(@RequestBody @Valid AuthLoginRequestDto authLoginRequestDto) {
+        authService.login(authLoginRequestDto);
+        return ResponseEntity.ok().build();
     }
 }
