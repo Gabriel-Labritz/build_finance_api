@@ -6,6 +6,8 @@ import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLogin
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
@@ -28,6 +30,7 @@ public class AuthService{
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     public AuthService(
             UserRepository userRepository,
@@ -35,13 +38,14 @@ public class AuthService{
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             EmailService emailService,
             AuthenticationManager authenticationManager,
-            JwtService jwtService) {
+            JwtService jwtService, RefreshTokenRepository refreshTokenRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.emailService = emailService;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.refreshTokenRepository = refreshTokenRepository;
     }
 
     @Transactional
@@ -71,6 +75,7 @@ public class AuthService{
         return new VerifiedUserResponseDto("Sua conta foi verificada com sucesso!, Você já pode fazer o login para começar a organizar suas finanças");
     }
 
+    @Transactional
     public AuthLoginResponseDto login(AuthLoginRequestDto authLoginRequestDto) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(authLoginRequestDto.email(), authLoginRequestDto.password());
@@ -81,6 +86,7 @@ public class AuthService{
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
+        refreshTokenRepository.save(new RefreshToken(refreshToken, user, jwtService.getRefreshTokenExpiration()));
         return new AuthLoginResponseDto(accessToken, refreshToken);
     }
 }

@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class JwtService {
     @Value("${api.security.jwt.access-token-expiration}")
     private Long accessTokenExpiration;
 
+    @Getter
     @Value("${api.security.jwt.refresh-token-expiration}")
     private Long refreshTokenExpiration;
 
