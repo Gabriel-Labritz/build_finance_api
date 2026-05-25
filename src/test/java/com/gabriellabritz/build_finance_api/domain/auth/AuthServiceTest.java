@@ -1,6 +1,11 @@
 package com.gabriellabritz.build_finance_api.domain.auth;
 
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenService;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
@@ -17,6 +22,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -42,17 +51,32 @@ class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private JwtService jwtService;
+
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private RefreshToken refreshToken;
+
     private EmailVerificationToken emailVerificationToken;
-
     private User user;
-
     private AuthRegisterRequestDto authRegisterRequestDto;
+    private AuthLoginRequestDto authLoginRequestDto;
 
     @BeforeEach
     void setUp() {
         this.authRegisterRequestDto = new AuthRegisterRequestDto("Teste", "teste@email.com", "Senha@123");
         this.emailVerificationToken = mock(EmailVerificationToken.class);
         this.user = mock(User.class);
+        this.authLoginRequestDto = new AuthLoginRequestDto("teste@email.com", "Acb1234!");
     }
 
     @Nested
@@ -185,6 +209,70 @@ class AuthServiceTest {
             verify(emailVerificationToken).validate();
             verify(user).verify();
             verify(emailVerificationTokenRepository).delete(emailVerificationToken);
+        }
+    }
+
+    @Nested
+    class login {
+        @Test
+        @DisplayName("Deve lança a exceção BadCredentialsException quando as credênciais do usuário são inválidas.")
+        void shouldThrowBadCredentialsExceptionWhenUserCredentialsIsInvalid() {
+            // Arrange
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new BadCredentialsException("Credenciais inválidas."));
+
+            // Act + Assert
+            assertThrows(BadCredentialsException.class, () -> authService.login(authLoginRequestDto));
+            verify(jwtService, never()).generateAccessToken(any());
+            verify(refreshTokenService, never()).createAndSave(any());
+        }
+
+        @Test
+        @DisplayName("Deve lança a exceção DisabledException quando a conta do usuário está inativa.")
+        void shouldThrowDisabledExceptionWhenUserAccountIsInactive() {
+            // Arrange
+            when(authenticationManager.authenticate(any()))
+                    .thenThrow(new DisabledException("Conta inativa."));
+
+            // Act + Assert
+            assertThrows(DisabledException.class, () -> authService.login(authLoginRequestDto));
+            verify(jwtService, never()).generateAccessToken(any());
+            verify(refreshTokenService, never()).createAndSave(any());
+        }
+
+        @Test
+        @DisplayName("Deve retornar o accessToken e o refreshToken para login válido.")
+        void shouldReturnTokensWhenLoginValid() {
+            // Arrange
+            when(authenticationManager.authenticate(any())).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn(user);
+            when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+            when(refreshTokenService.createAndSave(user)).thenReturn(refreshToken);
+            when(refreshToken.getRefreshToken()).thenReturn("refresh-token");
+
+            // Act
+            AuthLoginResponseDto result = authService.login(authLoginRequestDto);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals("access-token", result.accessToken());
+            assertEquals("refresh-token", result.refreshToken());
+        }
+
+        @Test
+        @DisplayName("Deve salvar o no banco para login válido.")
+        void shouldSaveRefreshTokenWhenLoginValid() {
+            // Arrange
+            when(authenticationManager.authenticate(any())).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn(user);
+            when(refreshTokenService.createAndSave(user)).thenReturn(refreshToken);
+            when(refreshToken.getRefreshToken()).thenReturn("refresh-token");
+
+            // Act
+            AuthLoginResponseDto result = authService.login(authLoginRequestDto);
+
+            // Assert
+            verify(refreshTokenService).createAndSave(user);
         }
     }
 }

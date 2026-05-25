@@ -43,7 +43,8 @@ public class AuthService{
             EmailService emailService,
             AuthenticationManager authenticationManager,
             JwtService jwtService,
-            RefreshTokenRepository refreshTokenRepository, RefreshTokenService refreshTokenService) {
+            RefreshTokenRepository refreshTokenRepository,
+            RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
