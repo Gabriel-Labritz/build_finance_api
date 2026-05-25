@@ -23,9 +23,6 @@ public class RefreshToken {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(nullable = false)
-    private Boolean revoked = false;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -34,5 +31,9 @@ public class RefreshToken {
         this.refreshToken = refreshToken;
         this.user = user;
         this.expiresAt = LocalDateTime.now().plusSeconds(expirationSeconds);
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(this.expiresAt);
     }
 }

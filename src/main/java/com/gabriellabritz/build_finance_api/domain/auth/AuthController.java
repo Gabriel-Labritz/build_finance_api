@@ -2,6 +2,7 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.RefreshTokenRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
@@ -32,5 +33,10 @@ public class AuthController {
     @PostMapping("/sign-in")
     public ResponseEntity<AuthLoginResponseDto> login(@RequestBody @Valid AuthLoginRequestDto authLoginRequestDto) {
         return ResponseEntity.ok().body(authService.login(authLoginRequestDto));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthLoginResponseDto> refreshToken(@RequestBody @Valid RefreshTokenRequestDto refreshTokenRequestDto) {
+        return ResponseEntity.ok().body(authService.generateNewRefreshToken(refreshTokenRequestDto));
     }
 }

@@ -2,12 +2,14 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.RefreshTokenRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenRepository;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenService;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
@@ -19,6 +21,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +34,7 @@ public class AuthService{
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthService(
             UserRepository userRepository,
@@ -38,14 +42,15 @@ public class AuthService{
             EmailVerificationTokenRepository emailVerificationTokenRepository,
             EmailService emailService,
             AuthenticationManager authenticationManager,
-            JwtService jwtService, RefreshTokenRepository refreshTokenRepository) {
+            JwtService jwtService,
+            RefreshTokenRepository refreshTokenRepository, RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailVerificationTokenRepository = emailVerificationTokenRepository;
         this.emailService = emailService;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -84,9 +89,26 @@ public class AuthService{
         User user = (User) authenticate.getPrincipal();
 
         String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        RefreshToken refreshToken = refreshTokenService.createAndSave(user);
 
-        refreshTokenRepository.save(new RefreshToken(refreshToken, user, jwtService.getRefreshTokenExpiration()));
-        return new AuthLoginResponseDto(accessToken, refreshToken);
+        return new AuthLoginResponseDto(accessToken, refreshToken.getRefreshToken());
+    }
+
+    @Transactional
+    public AuthLoginResponseDto generateNewRefreshToken(RefreshTokenRequestDto refreshTokenRequestDto) {
+        RefreshToken refreshToken = refreshTokenService.getValidRefreshToken(
+                refreshTokenRequestDto.refreshToken()
+        );
+
+        String userEmailSubject = jwtService.verifyToken(refreshToken.getRefreshToken());
+        UserDetails user = userRepository.findByEmailIgnoreCase(userEmailSubject)
+                .orElseThrow(() -> new UsernameNotFoundException("O usuário não foi encontrado."));
+
+        refreshTokenService.removeToken(refreshToken);
+
+        String newAccessToken = jwtService.generateAccessToken((User) user);
+        RefreshToken newRefreshToken = refreshTokenService.createAndSave((User) user);
+
+        return new AuthLoginResponseDto(newAccessToken, newRefreshToken.getRefreshToken());
     }
 }

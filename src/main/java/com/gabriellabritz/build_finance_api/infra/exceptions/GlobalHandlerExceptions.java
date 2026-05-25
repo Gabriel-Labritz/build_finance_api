@@ -3,6 +3,7 @@ package com.gabriellabritz.build_finance_api.infra.exceptions;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -77,6 +78,14 @@ public class GlobalHandlerExceptions {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
                 "Erro interno ao processar a autenticação. Tente novamente.");
         problemDetail.setTitle("Erro interno");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ProblemDetail handleInvalidRefreshTokenException(InvalidRefreshTokenException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        problemDetail.setTitle("Refresh token inválido.");
 
         return problemDetail;
     }
