@@ -61,7 +61,7 @@ public class JwtService {
             decodedJWT = verifier.verify(token);
             return decodedJWT.getSubject();
         } catch (JWTVerificationException exception){
-            return null;
+            throw new JWTVerificationException("Token JWT inválido.");
         }
     }
 

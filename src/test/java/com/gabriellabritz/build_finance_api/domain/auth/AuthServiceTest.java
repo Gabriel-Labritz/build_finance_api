@@ -1,7 +1,9 @@
 package com.gabriellabritz.build_finance_api.domain.auth;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.RefreshTokenRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
@@ -14,6 +16,7 @@ import com.gabriellabritz.build_finance_api.infra.email.EmailService;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -70,6 +73,7 @@ class AuthServiceTest {
     private User user;
     private AuthRegisterRequestDto authRegisterRequestDto;
     private AuthLoginRequestDto authLoginRequestDto;
+    private RefreshTokenRequestDto refreshTokenRequestDto;
 
     @BeforeEach
     void setUp() {
@@ -77,6 +81,7 @@ class AuthServiceTest {
         this.emailVerificationToken = mock(EmailVerificationToken.class);
         this.user = mock(User.class);
         this.authLoginRequestDto = new AuthLoginRequestDto("teste@email.com", "Acb1234!");
+        this.refreshTokenRequestDto = new RefreshTokenRequestDto("refresh-token");
     }
 
     @Nested
@@ -273,6 +278,117 @@ class AuthServiceTest {
 
             // Assert
             verify(refreshTokenService).createAndSave(user);
+        }
+    }
+
+    @Nested
+    class generateNewRefreshToken {
+        @Test
+        @DisplayName("Deve lançar a exceção InvalidRefreshTokenException quando o token não existe")
+        void shouldThrowInvalidRefreshTokenExceptionWhenRefreshTokenNotFound() {
+            // Arrange
+            String invalidToken = "invalid-token";
+            when(refreshTokenService.getValidRefreshToken(invalidToken))
+                    .thenThrow(new InvalidRefreshTokenException("Refresh token inválido."));
+
+            // Act + Assert
+            assertThrows(InvalidRefreshTokenException.class, () -> authService
+                    .generateNewRefreshToken(new RefreshTokenRequestDto("invalid-token")));
+            verify(jwtService, never()).verifyToken(any());
+            verify(userRepository, never()).findByEmailIgnoreCase(any());
+            verify(refreshTokenService, never()).removeToken(any());
+            verify(jwtService, never()).generateAccessToken(any());
+            verify(refreshTokenService, never()).createAndSave(any());
+        }
+
+        @Test
+        @DisplayName("Deve lançar a exceção InvalidRefreshTokenException quando o token está expirado")
+        void shouldThrowInvalidRefreshTokenExceptionWhenRefreshTokenIsExpired() {
+            // Arrange
+            String tokenExpired = "token-expired";
+            when(refreshTokenService.getValidRefreshToken(tokenExpired))
+                    .thenThrow(new InvalidRefreshTokenException("Refresh token expirado."));
+
+            // Act + Assert
+            assertThrows(InvalidRefreshTokenException.class, () -> authService
+                    .generateNewRefreshToken(new RefreshTokenRequestDto("token-expired")));
+            verify(jwtService, never()).verifyToken(any());
+            verify(userRepository, never()).findByEmailIgnoreCase(any());
+            verify(refreshTokenService, never()).removeToken(any());
+            verify(jwtService, never()).generateAccessToken(any());
+            verify(refreshTokenService, never()).createAndSave(any());
+        }
+
+        @Test
+        @DisplayName("Deve lançar a exceção JWTVerificationException quando o token JWT está corrompido")
+        void shouldThrowJWTVerificationExceptionWhenRefreshTokenIsCorrupted() {
+            // Arrange
+            String token = "token";
+            String invalidToken = "invalid-token";
+            when(refreshTokenService.getValidRefreshToken(token)).thenReturn(refreshToken);
+            when(refreshToken.getRefreshToken()).thenReturn(invalidToken);
+            when(jwtService.verifyToken(invalidToken)).thenThrow(new JWTVerificationException("Token JWT inválido."));
+
+            // Act + Assert
+            assertThrows(JWTVerificationException.class, () -> authService
+                    .generateNewRefreshToken(new RefreshTokenRequestDto(token)));
+            verify(jwtService).verifyToken(invalidToken);
+            verify(userRepository, never()).findByEmailIgnoreCase(any());
+            verify(refreshTokenService, never()).removeToken(any());
+            verify(jwtService, never()).generateAccessToken(any());
+            verify(refreshTokenService, never()).createAndSave(any());
+        }
+
+        @Test
+        @DisplayName("Deve retornar novos tokens quando o refresh token é válido")
+        void shouldReturnTokensWhenRefreshTokenIsValid() {
+            // Arrange
+            RefreshToken oldRefreshToken = mock(RefreshToken.class);
+            RefreshToken newRefreshToken = mock(RefreshToken.class);
+
+            String validToken = "valid-token";
+            String userEmailSubject = "useremail@email.com";
+
+            when(refreshTokenService.getValidRefreshToken(validToken)).thenReturn(oldRefreshToken);
+            when(oldRefreshToken.getRefreshToken()).thenReturn(validToken);
+            when(jwtService.verifyToken(validToken)).thenReturn(userEmailSubject);
+            when(userRepository.findByEmailIgnoreCase(userEmailSubject)).thenReturn(Optional.of(user));
+            when(jwtService.generateAccessToken(user)).thenReturn("new-access-token");
+            when(refreshTokenService.createAndSave(user)).thenReturn(newRefreshToken);
+            when(newRefreshToken.getRefreshToken()).thenReturn("new-refresh-token");
+
+            // Act
+            AuthLoginResponseDto result = authService.generateNewRefreshToken(new RefreshTokenRequestDto(validToken));
+
+            // Assert
+            assertNotNull(result);
+            assertEquals("new-access-token", result.accessToken());
+            assertEquals("new-refresh-token", result.refreshToken());
+        }
+
+        @Test
+        @DisplayName("Deve remover o token antigo quando o refresh token é válido")
+        void shouldRemoveOldRefreshTokenWhenRefreshTokenIsValid() {
+            // Arrange
+            RefreshToken oldRefreshToken = mock(RefreshToken.class);
+            RefreshToken newRefreshToken = mock(RefreshToken.class);
+
+            String validToken = "valid-token";
+            String userEmailSubject = "useremail@email.com";
+
+            when(refreshTokenService.getValidRefreshToken(validToken)).thenReturn(oldRefreshToken);
+            when(oldRefreshToken.getRefreshToken()).thenReturn(validToken);
+            when(jwtService.verifyToken(validToken)).thenReturn(userEmailSubject);
+            when(userRepository.findByEmailIgnoreCase(userEmailSubject)).thenReturn(Optional.of(user));
+            when(jwtService.generateAccessToken(user)).thenReturn("new-access-token");
+            when(refreshTokenService.createAndSave(user)).thenReturn(newRefreshToken);
+            when(newRefreshToken.getRefreshToken()).thenReturn("new-refresh-token");
+
+            // Act
+            authService.generateNewRefreshToken(new RefreshTokenRequestDto(validToken));
+
+            // Assert
+            verify(refreshTokenService).removeToken(oldRefreshToken);
         }
     }
 }

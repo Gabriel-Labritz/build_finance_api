@@ -1,5 +1,6 @@
 package com.gabriellabritz.build_finance_api.infra.exceptions;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
@@ -86,6 +87,14 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleInvalidRefreshTokenException(InvalidRefreshTokenException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
         problemDetail.setTitle("Refresh token inválido.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(JWTVerificationException.class)
+    public ProblemDetail handleJWTVerificationException(JWTVerificationException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        problemDetail.setTitle("Token JWT inválido.");
 
         return problemDetail;
     }
