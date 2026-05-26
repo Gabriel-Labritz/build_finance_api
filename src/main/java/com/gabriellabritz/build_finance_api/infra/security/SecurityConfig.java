@@ -1,5 +1,6 @@
 package com.gabriellabritz.build_finance_api.infra.security;
 
+import com.gabriellabritz.build_finance_api.infra.filters.AccessTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,10 +12,17 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private final AccessTokenFilter accessTokenFilter;
+
+    public SecurityConfig(AccessTokenFilter accessTokenFilter) {
+        this.accessTokenFilter = accessTokenFilter;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
@@ -24,6 +32,7 @@ public class SecurityConfig {
                     req.requestMatchers("/auth/**").permitAll();
                     req.anyRequest().authenticated();
                 })
+                .addFilterBefore(accessTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
