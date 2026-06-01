@@ -1,5 +1,7 @@
 package com.gabriellabritz.build_finance_api.infra.security;
 
+import com.gabriellabritz.build_finance_api.domain.auth.google.OAuth2LoginFailureHandler;
+import com.gabriellabritz.build_finance_api.domain.auth.google.OAuth2LoginSuccessHandler;
 import com.gabriellabritz.build_finance_api.infra.filters.AccessTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,9 +20,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 public class SecurityConfig {
     private final AccessTokenFilter accessTokenFilter;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
-    public SecurityConfig(AccessTokenFilter accessTokenFilter) {
+    public SecurityConfig(AccessTokenFilter accessTokenFilter, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler, OAuth2LoginFailureHandler oAuth2LoginFailureHandler) {
         this.accessTokenFilter = accessTokenFilter;
+        this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+        this.oAuth2LoginFailureHandler = oAuth2LoginFailureHandler;
     }
 
     @Bean
@@ -33,6 +39,10 @@ public class SecurityConfig {
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(accessTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth2 -> {
+                    oauth2.successHandler(oAuth2LoginSuccessHandler);
+                    oauth2.failureHandler(oAuth2LoginFailureHandler);
+                })
                 .build();
     }
 
