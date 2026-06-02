@@ -41,6 +41,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Boolean verified = false;
 
+    @Column(nullable = false)
+    private Boolean twoFactorEnabled = false;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -53,15 +56,6 @@ public class User implements UserDetails {
         this.name = authRegisterRequestDto.name();
         this.email = authRegisterRequestDto.email();
         this.password = passwordEncoded;
-    }
-
-    public void verify() {
-        if(this.verified) {
-            throw new UserAlreadyVerifiedException("O usuário já foi verificado.");
-        }
-
-        this.active = true;
-        this.verified = true;
     }
 
     @Override
@@ -92,5 +86,22 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.active;
+    }
+
+    public void verify() {
+        if(this.verified) {
+            throw new UserAlreadyVerifiedException("O usuário já foi verificado.");
+        }
+
+        this.active = true;
+        this.verified = true;
+    }
+
+    public void enableTwoFactor() {
+        this.twoFactorEnabled = true;
+    }
+
+    public void disableTwoFactor() {
+        this.twoFactorEnabled = false;
     }
 }
