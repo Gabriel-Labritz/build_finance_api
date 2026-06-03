@@ -61,11 +61,11 @@ public class JwtService {
             decodedJWT = verifier.verify(token);
             return decodedJWT.getSubject();
         } catch (JWTVerificationException exception){
-            throw new JWTVerificationException("Token JWT inválido.");
+            throw new JWTVerificationException("JWT inválido: " + exception.getMessage());
         }
     }
 
     private Instant expiration(Long seconds) {
-        return LocalDateTime.now().plusSeconds(seconds).toInstant(ZoneOffset.UTC);
+        return Instant.now().plusSeconds(seconds);
     }
 }

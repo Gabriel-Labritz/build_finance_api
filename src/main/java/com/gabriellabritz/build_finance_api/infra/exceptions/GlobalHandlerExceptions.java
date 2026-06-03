@@ -6,6 +6,7 @@ import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerific
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabled;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -95,6 +96,14 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleJWTVerificationException(JWTVerificationException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
         problemDetail.setTitle("Token JWT inválido.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(TwoFactorAuthAlreadyEnabled.class)
+    public ProblemDetail handleTwoFactorAuthAlreadyEnabled(TwoFactorAuthAlreadyEnabled exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problemDetail.setTitle("Configuração de autenticação de dois fatores.");
 
         return problemDetail;
     }
