@@ -6,7 +6,9 @@ import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerific
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabled;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthNotEnabled;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -104,6 +106,22 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleTwoFactorAuthAlreadyEnabled(TwoFactorAuthAlreadyEnabled exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
         problemDetail.setTitle("Configuração de autenticação de dois fatores.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidA2FCodeException.class)
+    public ProblemDetail handleInvalidA2FCodeException(InvalidA2FCodeException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        problemDetail.setTitle("Código inválido.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(TwoFactorAuthNotEnabled.class)
+    public ProblemDetail handleTwoFactorAuthNotEnabled(TwoFactorAuthNotEnabled exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problemDetail.setTitle("Autenticação de dois fatores desativada.");
 
         return problemDetail;
     }

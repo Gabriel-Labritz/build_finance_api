@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface TwoFactorAuthRepository extends JpaRepository<TwoFactorAuth, UUID> {
     Optional<TwoFactorAuth> findByUserId(UUID userId);
+    void deleteByUserId(UUID userId);
 }
