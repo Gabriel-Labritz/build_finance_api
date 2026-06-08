@@ -5,8 +5,8 @@ import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.TwoFactor
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
-import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabled;
-import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthNotEnabled;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabledException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthNotEnabledException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorSecretNotFoundException;
 import com.gabriellabritz.build_finance_api.infra.security.totp.TotpService;
 import jakarta.transaction.Transactional;
@@ -32,7 +32,7 @@ public class TwoFactorAuthService {
     @Transactional
     public TwoFactorSetupResponse generateQRCode(User userLogged) {
         if(userLogged.getTwoFactorEnabled()) {
-            throw new TwoFactorAuthAlreadyEnabled("A autenticação de dois fatores já está habilitada.");
+            throw new TwoFactorAuthAlreadyEnabledException("A autenticação de dois fatores já está habilitada.");
         }
 
         twoFactorAuthRepository.findByUserId(userLogged.getId())
@@ -52,7 +52,7 @@ public class TwoFactorAuthService {
     @Transactional
     public void enableTwoFactorAuth(User userLogged, TwoFactorAuthRequestDto twoFactorAuthRequestDto) {
         if (userLogged.getTwoFactorEnabled()) {
-            throw new TwoFactorAuthAlreadyEnabled("A autenticação de dois fatores já está habilitada.");
+            throw new TwoFactorAuthAlreadyEnabledException("A autenticação de dois fatores já está habilitada.");
         }
 
         validateTwoFactorCode(userLogged.getId(), twoFactorAuthRequestDto.code());
@@ -64,7 +64,7 @@ public class TwoFactorAuthService {
     @Transactional
     public void disableTwoFactorAuth(User userLogged, TwoFactorAuthRequestDto twoFactorAuthRequestDto) {
         if (!userLogged.getTwoFactorEnabled()) {
-            throw new TwoFactorAuthNotEnabled("A autenticação de dois fatores não está habilitada.");
+            throw new TwoFactorAuthNotEnabledException("A autenticação de dois fatores não está habilitada.");
         }
 
         validateTwoFactorCode(userLogged.getId(), twoFactorAuthRequestDto.code());

@@ -7,8 +7,8 @@ import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVer
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
-import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabled;
-import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthNotEnabled;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabledException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthNotEnabledException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -102,8 +102,8 @@ public class GlobalHandlerExceptions {
         return problemDetail;
     }
 
-    @ExceptionHandler(TwoFactorAuthAlreadyEnabled.class)
-    public ProblemDetail handleTwoFactorAuthAlreadyEnabled(TwoFactorAuthAlreadyEnabled exception) {
+    @ExceptionHandler(TwoFactorAuthAlreadyEnabledException.class)
+    public ProblemDetail handleTwoFactorAuthAlreadyEnabled(TwoFactorAuthAlreadyEnabledException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
         problemDetail.setTitle("Configuração de autenticação de dois fatores.");
 
@@ -118,8 +118,8 @@ public class GlobalHandlerExceptions {
         return problemDetail;
     }
 
-    @ExceptionHandler(TwoFactorAuthNotEnabled.class)
-    public ProblemDetail handleTwoFactorAuthNotEnabled(TwoFactorAuthNotEnabled exception) {
+    @ExceptionHandler(TwoFactorAuthNotEnabledException.class)
+    public ProblemDetail handleTwoFactorAuthNotEnabled(TwoFactorAuthNotEnabledException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
         problemDetail.setTitle("Autenticação de dois fatores desativada.");
 
