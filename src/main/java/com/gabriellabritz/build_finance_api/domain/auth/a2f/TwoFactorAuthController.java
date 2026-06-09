@@ -1,6 +1,7 @@
 package com.gabriellabritz.build_finance_api.domain.auth.a2f;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.TwoFactorAuthRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.TwoFactorSetupResponse;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import jakarta.validation.Valid;
@@ -37,5 +38,13 @@ public class TwoFactorAuthController {
     ) {
         twoFactorAuthService.disableTwoFactorAuth(userLogged, twoFactorAuthRequestDto);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<AuthLoginResponseDto> verifyTwoFactorAuth(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody @Valid TwoFactorAuthRequestDto twoFactorAuthRequestDto
+    ) {
+        return ResponseEntity.ok().body(twoFactorAuthService.verifyTwoFactorAuth(authHeader, twoFactorAuthRequestDto));
     }
 }

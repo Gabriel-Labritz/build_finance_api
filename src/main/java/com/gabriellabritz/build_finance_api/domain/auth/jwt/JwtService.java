@@ -13,8 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 @Service
 public class JwtService {
@@ -28,21 +26,29 @@ public class JwtService {
     @Value("${api.security.jwt.refresh-token-expiration}")
     private Long refreshTokenExpiration;
 
+    @Value("${api.security.jwt.pre-auth-token-expiration}")
+    private Long preAuthTokenExpiration;
+
     public String generateAccessToken(User user) {
-        return generateToken(user, accessTokenExpiration);
+        return generateToken(user, accessTokenExpiration, "access-token");
     }
 
     public String generateRefreshToken(User user) {
-        return generateToken(user, refreshTokenExpiration);
+        return generateToken(user, refreshTokenExpiration, "refresh-token");
     }
 
-    private String generateToken(User user, Long expirationSeconds) {
+    public String generatePreAuthToken(User user) {
+        return generateToken(user, preAuthTokenExpiration, "pre-auth");
+    }
+
+    private String generateToken(User user, Long expirationSeconds, String tokenType) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(jwtSecret);
             return JWT.create()
                     .withIssuer("Build Finance API")
                     .withSubject(user.getEmail())
                     .withClaim("userId", user.getId().toString())
+                    .withClaim("type", tokenType)
                     .withExpiresAt(expiration(expirationSeconds))
                     .sign(algorithm);
         } catch (JWTCreationException exception){
@@ -63,6 +69,11 @@ public class JwtService {
         } catch (JWTVerificationException exception){
             throw new JWTVerificationException("JWT inválido: " + exception.getMessage());
         }
+    }
+
+    public boolean isPreAuthToken(String token) {
+        DecodedJWT decoded = JWT.decode(token);
+        return "pre-auth".equals(decoded.getClaim("type").asString());
     }
 
     private Instant expiration(Long seconds) {

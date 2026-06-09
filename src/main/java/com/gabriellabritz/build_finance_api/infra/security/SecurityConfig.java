@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers("/auth/**").permitAll();
+                    req.requestMatchers("/two-factor-auth/verify").permitAll();
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(accessTokenFilter, UsernamePasswordAuthenticationFilter.class)

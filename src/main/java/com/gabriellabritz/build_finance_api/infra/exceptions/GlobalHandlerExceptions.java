@@ -4,6 +4,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidPreAuthTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
@@ -122,6 +123,14 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleTwoFactorAuthNotEnabled(TwoFactorAuthNotEnabledException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
         problemDetail.setTitle("Autenticação de dois fatores desativada.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidPreAuthTokenException.class)
+    public ProblemDetail handleInvalidPreAuthTokenException(InvalidPreAuthTokenException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+        problemDetail.setTitle("Tipo do token inválido.");
 
         return problemDetail;
     }

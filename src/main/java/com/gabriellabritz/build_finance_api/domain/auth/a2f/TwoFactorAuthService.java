@@ -1,15 +1,21 @@
 package com.gabriellabritz.build_finance_api.domain.auth.a2f;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.TwoFactorAuthRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.TwoFactorSetupResponse;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
+import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenService;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
+import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidPreAuthTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabledException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthNotEnabledException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorSecretNotFoundException;
 import com.gabriellabritz.build_finance_api.infra.security.totp.TotpService;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -19,14 +25,19 @@ public class TwoFactorAuthService {
     private final TotpService totpService;
     private final TwoFactorAuthRepository twoFactorAuthRepository;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
     public TwoFactorAuthService(
             TotpService totpService,
             TwoFactorAuthRepository twoFactorAuthRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            JwtService jwtService, RefreshTokenService refreshTokenService) {
         this.totpService = totpService;
         this.twoFactorAuthRepository = twoFactorAuthRepository;
         this.userRepository = userRepository;
+        this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -72,6 +83,25 @@ public class TwoFactorAuthService {
         userLogged.disableTwoFactor();
         userRepository.save(userLogged);
         twoFactorAuthRepository.deleteByUserId(userLogged.getId());
+    }
+
+    public AuthLoginResponseDto verifyTwoFactorAuth(String authHeader, TwoFactorAuthRequestDto twoFactorAuthRequestDto) {
+        String preAuthToken = authHeader.substring(7);
+
+        if (!jwtService.isPreAuthToken(preAuthToken)) {
+            throw new InvalidPreAuthTokenException("Token inválido para essa operação.");
+        }
+
+        String userEmailSubject = jwtService.verifyToken(preAuthToken);
+        User user = userRepository.findByEmailIgnoreCase(userEmailSubject)
+                .orElseThrow(() -> new UsernameNotFoundException("O usuário não foi encontrado."));
+
+        validateTwoFactorCode(user.getId(), twoFactorAuthRequestDto.code());
+
+        String accessToken = jwtService.generateAccessToken(user);
+        RefreshToken refreshToken = refreshTokenService.createAndSave(user);
+
+        return new AuthLoginResponseDto(false, accessToken, refreshToken.getRefreshToken(), null);
     }
 
     private void validateTwoFactorCode(UUID userId, String code) {

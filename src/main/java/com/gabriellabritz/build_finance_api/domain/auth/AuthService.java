@@ -89,10 +89,15 @@ public class AuthService{
 
         User user = (User) authenticate.getPrincipal();
 
+        if(user.getTwoFactorEnabled()) {
+            String preAuthToken = jwtService.generatePreAuthToken(user);
+            return new AuthLoginResponseDto(true, null, null, preAuthToken);
+        }
+
         String accessToken = jwtService.generateAccessToken(user);
         RefreshToken refreshToken = refreshTokenService.createAndSave(user);
 
-        return new AuthLoginResponseDto(accessToken, refreshToken.getRefreshToken());
+        return new AuthLoginResponseDto(false, accessToken, refreshToken.getRefreshToken(), null);
     }
 
     @Transactional
@@ -102,14 +107,14 @@ public class AuthService{
         );
 
         String userEmailSubject = jwtService.verifyToken(refreshToken.getRefreshToken());
-        UserDetails user = userRepository.findByEmailIgnoreCase(userEmailSubject)
+        User user = userRepository.findByEmailIgnoreCase(userEmailSubject)
                 .orElseThrow(() -> new UsernameNotFoundException("O usuário não foi encontrado."));
 
         refreshTokenService.removeToken(refreshToken);
 
-        String newAccessToken = jwtService.generateAccessToken((User) user);
-        RefreshToken newRefreshToken = refreshTokenService.createAndSave((User) user);
+        String newAccessToken = jwtService.generateAccessToken(user);
+        RefreshToken newRefreshToken = refreshTokenService.createAndSave(user);
 
-        return new AuthLoginResponseDto(newAccessToken, newRefreshToken.getRefreshToken());
+        return new AuthLoginResponseDto(false,newAccessToken, newRefreshToken.getRefreshToken(), null);
     }
 }

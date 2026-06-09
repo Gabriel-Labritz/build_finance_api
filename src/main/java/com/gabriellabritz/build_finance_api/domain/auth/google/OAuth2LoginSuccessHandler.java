@@ -53,7 +53,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().write(
-                objectMapper.writeValueAsString(new AuthLoginResponseDto(accessToken, refreshToken.getRefreshToken()))
+                objectMapper.writeValueAsString(new AuthLoginResponseDto(false, accessToken, refreshToken.getRefreshToken(), null))
         );
     }
 }
