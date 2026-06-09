@@ -4,18 +4,15 @@ import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginR
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
-import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
-import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;
-import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
-import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationToken;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
 import com.gabriellabritz.build_finance_api.infra.email.EmailService;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
-import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,7 +37,6 @@ public class AuthService{
             EmailService emailService,
             AuthenticationManager authenticationManager,
             JwtService jwtService,
-            RefreshTokenRepository refreshTokenRepository,
             RefreshTokenService refreshTokenService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -64,18 +60,6 @@ public class AuthService{
 
         emailService.sendEmailVerification(user, emailVerificationToken);
         return new AuthRegisterResponseDto("Cadastro realizado com sucesso! Verifique seu email para ativar a conta.");
-    }
-
-    @Transactional
-    public VerifiedUserResponseDto verifyAccount(String token) {
-        EmailVerificationToken verificationToken = emailVerificationTokenRepository
-                .findByToken(token).orElseThrow(() -> new InvalidVerificationTokenException("Token de verificação inválido."));
-
-        verificationToken.validate();
-        verificationToken.getUser().verify();
-        emailVerificationTokenRepository.delete(verificationToken);
-
-        return new VerifiedUserResponseDto("Sua conta foi verificada com sucesso!, Você já pode fazer o login para começar a organizar suas finanças");
     }
 
     @Transactional

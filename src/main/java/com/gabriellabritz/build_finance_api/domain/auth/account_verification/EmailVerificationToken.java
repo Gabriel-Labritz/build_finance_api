@@ -1,4 +1,4 @@
-package com.gabriellabritz.build_finance_api.domain.auth.verification;
+package com.gabriellabritz.build_finance_api.domain.auth.account_verification;
 
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;

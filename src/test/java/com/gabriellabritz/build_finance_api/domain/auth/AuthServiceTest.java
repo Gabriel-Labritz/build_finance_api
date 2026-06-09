@@ -8,8 +8,8 @@ import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLogin
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;
-import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
-import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationToken;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
 import com.gabriellabritz.build_finance_api.infra.email.EmailService;

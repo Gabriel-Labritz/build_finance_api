@@ -1,6 +1,6 @@
 package com.gabriellabritz.build_finance_api.infra.email;
 
-import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.infra.exceptions.email.EmailSendException;
 import jakarta.mail.MessagingException;
@@ -54,7 +54,7 @@ public class EmailService {
     }
 
     public void sendEmailVerification(User user, EmailVerificationToken emailVerificationToken) {
-        String verificationUrl = URL_SITE.concat("/auth/verify-account?token=").concat(emailVerificationToken.getToken());
+        String verificationUrl = URL_SITE.concat("/account/verify-account?token=").concat(emailVerificationToken.getToken());
         String subject = "Build Finance - Verifique sua conta";
 
         String bodyEmail = loadTemplate(emailVerificationTemplate)

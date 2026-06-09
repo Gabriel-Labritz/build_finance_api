@@ -1,4 +1,4 @@
-package com.gabriellabritz.build_finance_api.domain.auth.verification;
+package com.gabriellabritz.build_finance_api.domain.auth.account_verification;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
