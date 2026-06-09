@@ -2,14 +2,13 @@ package com.gabriellabritz.build_finance_api.domain.auth;
 
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
-import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.RefreshTokenRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthRegisterResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
-import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
-import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenRepository;
-import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenService;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenRepository;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationToken;
 import com.gabriellabritz.build_finance_api.domain.auth.verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.user.User;
@@ -21,8 +20,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -98,23 +95,5 @@ public class AuthService{
         RefreshToken refreshToken = refreshTokenService.createAndSave(user);
 
         return new AuthLoginResponseDto(false, accessToken, refreshToken.getRefreshToken(), null);
-    }
-
-    @Transactional
-    public AuthLoginResponseDto generateNewRefreshToken(RefreshTokenRequestDto refreshTokenRequestDto) {
-        RefreshToken refreshToken = refreshTokenService.getValidRefreshToken(
-                refreshTokenRequestDto.refreshToken()
-        );
-
-        String userEmailSubject = jwtService.verifyToken(refreshToken.getRefreshToken());
-        User user = userRepository.findByEmailIgnoreCase(userEmailSubject)
-                .orElseThrow(() -> new UsernameNotFoundException("O usuário não foi encontrado."));
-
-        refreshTokenService.removeToken(refreshToken);
-
-        String newAccessToken = jwtService.generateAccessToken(user);
-        RefreshToken newRefreshToken = refreshTokenService.createAndSave(user);
-
-        return new AuthLoginResponseDto(false,newAccessToken, newRefreshToken.getRefreshToken(), null);
     }
 }

@@ -1,5 +1,8 @@
 package com.gabriellabritz.build_finance_api.domain.auth.jwt;
 
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenRepository;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import org.junit.jupiter.api.BeforeEach;

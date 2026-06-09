@@ -1,4 +1,4 @@
-package com.gabriellabritz.build_finance_api.domain.auth.jwt;
+package com.gabriellabritz.build_finance_api.domain.auth.refresh_token;
 
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import jakarta.persistence.*;

@@ -4,8 +4,8 @@ import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.TwoFactorA
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.TwoFactorSetupResponse;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
-import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshToken;
-import com.gabriellabritz.build_finance_api.domain.auth.jwt.RefreshTokenService;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidPreAuthTokenException;
