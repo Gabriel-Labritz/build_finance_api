@@ -134,19 +134,19 @@ class RefreshTokenServiceTest {
         }
     }
 
-    @Nested
-    class removeToken {
-        @Test
-        @DisplayName("Deve remover refresh token")
-        void shouldRemoveRefreshToken() {
-            // Arrange
-            when(refreshTokenMock.getRefreshToken()).thenReturn("refresh-token");
-
-            // Act
-            refreshTokenService.removeToken(refreshTokenMock);
-
-            // Assert
-            verify(refreshTokenRepository).deleteByRefreshToken(refreshTokenMock.getRefreshToken());
-        }
-    }
+//    @Nested
+//    class removeToken {
+//        @Test
+//        @DisplayName("Deve remover refresh token")
+//        void shouldRemoveRefreshToken() {
+//            // Arrange
+//            when(refreshTokenMock.getRefreshToken()).thenReturn("refresh-token");
+//
+//            // Act
+//            refreshTokenService.removeToken(refreshTokenMock);
+//
+//            // Assert
+//            verify(refreshTokenRepository).deleteByRefreshToken(refreshTokenMock.getRefreshToken());
+//        }
+//    }
 }

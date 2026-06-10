@@ -1,8 +1,8 @@
 package com.gabriellabritz.build_finance_api.domain.auth.a2f;
 
-import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.TwoFactorAuthRequestDto;
+import com.gabriellabritz.build_finance_api.domain.auth.a2f.dtos.request.TwoFactorAuthRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
-import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.TwoFactorSetupResponse;
+import com.gabriellabritz.build_finance_api.domain.auth.a2f.dtos.response.TwoFactorSetupResponse;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;

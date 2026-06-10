@@ -1,6 +1,6 @@
 package com.gabriellabritz.build_finance_api.domain.auth.account_verification;
 
-import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.dtos.VerifiedUserResponseDto;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;

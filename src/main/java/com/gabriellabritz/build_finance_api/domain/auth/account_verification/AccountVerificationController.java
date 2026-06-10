@@ -1,6 +1,6 @@
 package com.gabriellabritz.build_finance_api.domain.auth.account_verification;
 
-import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.VerifiedUserResponseDto;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.dtos.VerifiedUserResponseDto;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

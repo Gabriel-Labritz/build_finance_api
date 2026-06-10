@@ -1,4 +1,4 @@
-package com.gabriellabritz.build_finance_api.domain.auth.dtos.requests;
+package com.gabriellabritz.build_finance_api.domain.auth.a2f.dtos.request;
 
 import jakarta.validation.constraints.NotBlank;
 
