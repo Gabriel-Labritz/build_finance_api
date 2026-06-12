@@ -1,27 +1,25 @@
 package com.gabriellabritz.build_finance_api.domain.auth;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationToken;
+import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationTokenRepository;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthLoginRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.requests.AuthRegisterRequestDto;
-import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.dtos.RefreshTokenRequestDto;
 import com.gabriellabritz.build_finance_api.domain.auth.dtos.responses.AuthLoginResponseDto;
 import com.gabriellabritz.build_finance_api.domain.auth.jwt.JwtService;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshToken;
 import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.RefreshTokenService;
-import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationToken;
-import com.gabriellabritz.build_finance_api.domain.auth.account_verification.EmailVerificationTokenRepository;
+import com.gabriellabritz.build_finance_api.domain.auth.refresh_token.dtos.RefreshTokenRequestDto;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.domain.user.UserRepository;
 import com.gabriellabritz.build_finance_api.infra.email.EmailService;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
-import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
-import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
-import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,8 +28,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -69,17 +65,27 @@ class AuthServiceTest {
     @Mock
     private RefreshToken refreshToken;
 
+    @Mock
     private EmailVerificationToken emailVerificationToken;
+
+    @Mock
     private User user;
+
     private AuthRegisterRequestDto authRegisterRequestDto;
+
     private AuthLoginRequestDto authLoginRequestDto;
+
     private RefreshTokenRequestDto refreshTokenRequestDto;
+
+    @Captor
+    private ArgumentCaptor<User> userArgumentCaptor;
+
+    @Captor
+    private ArgumentCaptor<EmailVerificationToken> emailVerificationTokenArgumentCaptor;
 
     @BeforeEach
     void setUp() {
         this.authRegisterRequestDto = new AuthRegisterRequestDto("Teste", "teste@email.com", "Senha@123");
-        this.emailVerificationToken = mock(EmailVerificationToken.class);
-        this.user = mock(User.class);
         this.authLoginRequestDto = new AuthLoginRequestDto("teste@email.com", "Acb1234!");
         this.refreshTokenRequestDto = new RefreshTokenRequestDto("refresh-token");
     }
@@ -110,14 +116,19 @@ class AuthServiceTest {
             when(passwordEncoder.encode(authRegisterRequestDto.password()))
                     .thenReturn("password_hash");
             when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-            when(emailVerificationTokenRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
             // Act
             authService.register(authRegisterRequestDto);
 
             // Assert
+            verify(userRepository).existsByEmailIgnoreCase(authRegisterRequestDto.email());
             verify(passwordEncoder).encode(authRegisterRequestDto.password());
-            verify(userRepository).save(argThat(user -> user.getPassword().equals("password_hash")));
+            verify(userRepository).save(userArgumentCaptor.capture());
+
+            User userCaptured = userArgumentCaptor.getValue();
+            assertEquals(authRegisterRequestDto.name(), userCaptured.getName());
+            assertEquals(authRegisterRequestDto.email(), userCaptured.getEmail());
+            assertEquals("password_hash", userCaptured.getPassword());
         }
 
         @Test
@@ -133,13 +144,13 @@ class AuthServiceTest {
             authService.register(authRegisterRequestDto);
 
             // Assert
-            verify(emailVerificationTokenRepository)
-                    .save(argThat(token ->
-                            token.getUser() != null &&
-                                    token.getToken() != null &&
-                                    !token.getToken().isBlank() &&
-                                    !token.isExpired()
-                    ));
+            verify(emailVerificationTokenRepository).save(emailVerificationTokenArgumentCaptor.capture());
+
+            EmailVerificationToken emailTokenCaptured = emailVerificationTokenArgumentCaptor.getValue();
+            assertNotNull(emailTokenCaptured.getUser());
+            assertEquals(authRegisterRequestDto.email(), emailTokenCaptured.getUser().getEmail());
+            assertNotNull(emailTokenCaptured.getToken());
+            assertFalse(emailTokenCaptured.isExpired());
         }
 
         @Test
@@ -155,8 +166,14 @@ class AuthServiceTest {
             authService.register(authRegisterRequestDto);
 
             // Assert
-            verify(emailService).sendEmailVerification(argThat(user ->
-                    user.getEmail().equals(authRegisterRequestDto.email())), any());
+            verify(emailService).sendEmailVerification(userArgumentCaptor.capture(), emailVerificationTokenArgumentCaptor.capture());
+
+            User userCaptured = userArgumentCaptor.getValue();
+            EmailVerificationToken emailTokenCaptured = emailVerificationTokenArgumentCaptor.getValue();
+
+            assertEquals(authRegisterRequestDto.email(), userCaptured.getEmail());
+            assertNotNull(emailTokenCaptured.getToken());
+            assertEquals(userCaptured, emailTokenCaptured.getUser());
         }
     }
 
@@ -189,11 +206,35 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Deve retornar o accessToken e o refreshToken para login válido.")
-        void shouldReturnTokensWhenLoginValid() {
+        @DisplayName("Deve gerar um token de pre-auth quando o usuário está com a a2f habilitada")
+        void shouldGeneratePreAuthTokenWhenTwoFactorAuthIsEnabled() {
             // Arrange
             when(authenticationManager.authenticate(any())).thenReturn(authentication);
             when(authentication.getPrincipal()).thenReturn(user);
+            when(user.getTwoFactorEnabled()).thenReturn(true);
+            when(jwtService.generatePreAuthToken(user)).thenReturn("pre-auth-token");
+
+            // Act
+            AuthLoginResponseDto result = authService.login(authLoginRequestDto);
+
+            // Assert
+            verify(jwtService).generatePreAuthToken(user);
+            verify(jwtService, never()).generateAccessToken(any());
+            verify(refreshTokenService, never()).createAndSave(any());
+
+            assertTrue(result.requiresTwoFactor());
+            assertNull(result.accessToken());
+            assertNull(result.refreshToken());
+            assertEquals("pre-auth-token", result.preAuthToken());
+        }
+
+        @Test
+        @DisplayName("Deve retornar o accessToken e o refreshToken quando o usuário não está com a a2f habilitada.")
+        void shouldReturnAccessAndRefreshTokenWhenUserDoesNotTwoFactorEnabled() {
+            // Arrange
+            when(authenticationManager.authenticate(any())).thenReturn(authentication);
+            when(authentication.getPrincipal()).thenReturn(user);
+            when(user.getTwoFactorEnabled()).thenReturn(false);
             when(jwtService.generateAccessToken(user)).thenReturn("access-token");
             when(refreshTokenService.createAndSave(user)).thenReturn(refreshToken);
             when(refreshToken.getRefreshToken()).thenReturn("refresh-token");
@@ -202,25 +243,15 @@ class AuthServiceTest {
             AuthLoginResponseDto result = authService.login(authLoginRequestDto);
 
             // Assert
+            verify(jwtService, never()).generatePreAuthToken(any());
+            verify(jwtService).generateAccessToken(user);
+            verify(refreshTokenService).createAndSave(user);
+
             assertNotNull(result);
+            assertFalse(result.requiresTwoFactor());
             assertEquals("access-token", result.accessToken());
             assertEquals("refresh-token", result.refreshToken());
-        }
-
-        @Test
-        @DisplayName("Deve salvar o no banco para login válido.")
-        void shouldSaveRefreshTokenWhenLoginValid() {
-            // Arrange
-            when(authenticationManager.authenticate(any())).thenReturn(authentication);
-            when(authentication.getPrincipal()).thenReturn(user);
-            when(refreshTokenService.createAndSave(user)).thenReturn(refreshToken);
-            when(refreshToken.getRefreshToken()).thenReturn("refresh-token");
-
-            // Act
-            AuthLoginResponseDto result = authService.login(authLoginRequestDto);
-
-            // Assert
-            verify(refreshTokenService).createAndSave(user);
+            assertNull(result.preAuthToken());
         }
     }
 }
