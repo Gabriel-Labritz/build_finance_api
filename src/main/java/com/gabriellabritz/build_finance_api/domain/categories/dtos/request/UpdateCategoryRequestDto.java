@@ -1,0 +1,11 @@
+package com.gabriellabritz.build_finance_api.domain.categories.dtos.request;
+
+import com.gabriellabritz.build_finance_api.domain.categories.enums.CategoryType;
+import jakarta.validation.constraints.Size;
+
+public record UpdateCategoryRequestDto(
+        @Size(min = 3, max = 50, message = "O nome da categoria deve conter entre 3 a 50 caracteres.")
+        String name,
+        CategoryType type
+) {
+}

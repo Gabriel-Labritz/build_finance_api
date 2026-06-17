@@ -1,11 +1,14 @@
 package com.gabriellabritz.build_finance_api.domain.categories;
 
+import com.gabriellabritz.build_finance_api.domain.categories.dtos.request.UpdateCategoryRequestDto;
 import com.gabriellabritz.build_finance_api.domain.categories.enums.CategoryType;
 import com.gabriellabritz.build_finance_api.domain.user.User;
+import com.gabriellabritz.build_finance_api.infra.exceptions.categories.DefaultCategoryException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -36,5 +39,13 @@ public class Category {
         this.type = categoryType;
         this.user = user;
         this.defaultCategory = false;
+    }
+
+    public void rename(String name) {
+        this.name = name;
+    }
+
+    public void changeType(CategoryType type) {
+        this.type = type;
     }
 }

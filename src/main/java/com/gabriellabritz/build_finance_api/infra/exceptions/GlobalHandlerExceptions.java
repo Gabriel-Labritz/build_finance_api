@@ -4,6 +4,9 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.EmailAlreadyUsedException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.InvalidVerificationTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.auth.UserAlreadyVerifiedException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.categories.CategoryAlreadyExistsException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.categories.CategoryNotFoundException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.categories.DefaultCategoryException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidPreAuthTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
@@ -131,6 +134,30 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleInvalidPreAuthTokenException(InvalidPreAuthTokenException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
         problemDetail.setTitle("Tipo do token inválido.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CategoryAlreadyExistsException.class)
+    public ProblemDetail handleCategoryAlreadyExistsException(CategoryAlreadyExistsException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problemDetail.setTitle("Categoria já existe.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ProblemDetail handleCategoryNotFoundException(CategoryNotFoundException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        problemDetail.setTitle("Categoria não encontrada.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(DefaultCategoryException.class)
+    public ProblemDetail handleDefaultCategoryException(DefaultCategoryException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        problemDetail.setTitle("Categoria padrão.");
 
         return problemDetail;
     }
