@@ -64,7 +64,7 @@ public class CategoryService {
         categoryRepository.delete(category);
     }
 
-    private Category getCategory(UUID id, UUID userId) {
+    public Category getCategory(UUID id, UUID userId) {
         return categoryRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new CategoryNotFoundException("A categoria não foi encontrada."));
     }

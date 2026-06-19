@@ -38,4 +38,12 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
             AND c.user.id = :userId
             """)
     Optional<Category> findByIdAndUserId(@Param("id") UUID id, @Param("userId") UUID userId);
+
+    @Query("""
+            SELECT c
+            FROM Category c
+            WHERE c.id = :id
+            AND (c.user.id = :userId OR c.defaultCategory = true)
+            """)
+    Optional<Category> findCategoryByIdAndUser(@Param("id") UUID id, @Param("userId") UUID userId);
 }
