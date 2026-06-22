@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 
 @Getter
@@ -54,6 +55,14 @@ public class Transaction {
         this.user = user;
         this.date = date;
         this.description = description;
+    }
+
+    public void update(TransactionType type, BigDecimal amount, Category category, LocalDate date, String description) {
+        Optional.ofNullable(type).ifPresent(value -> this.type = value);
+        Optional.ofNullable(amount).ifPresent(value -> this.amount = value);
+        Optional.ofNullable(category).ifPresent(value -> this.category = value);
+        Optional.ofNullable(date).ifPresent(value -> this.date = value);
+        Optional.ofNullable(description).ifPresent(value -> this.description = value);
     }
 }
 

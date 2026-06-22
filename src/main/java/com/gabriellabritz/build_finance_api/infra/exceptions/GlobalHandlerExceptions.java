@@ -10,6 +10,7 @@ import com.gabriellabritz.build_finance_api.infra.exceptions.categories.DefaultC
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidPreAuthTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.transactions.TransactionNotFoundException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.transactions.TransactionTypeMismatchException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.TwoFactorAuthAlreadyEnabledException;
@@ -167,6 +168,14 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleTransactionTypeMismatchException(TransactionTypeMismatchException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         problemDetail.setTitle("Tipo de transação.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(TransactionNotFoundException.class)
+    public ProblemDetail handleTransactionNotFoundException(TransactionNotFoundException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        problemDetail.setTitle("Transação não encontrada.");
 
         return problemDetail;
     }
