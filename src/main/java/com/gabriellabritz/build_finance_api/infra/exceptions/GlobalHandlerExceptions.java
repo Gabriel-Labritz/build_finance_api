@@ -10,6 +10,10 @@ import com.gabriellabritz.build_finance_api.infra.exceptions.categories.DefaultC
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidPreAuthTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.InvalidRefreshTokenException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.jwt.JwtGenerationException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.recurring_transactions.InvalidRecurringTransactionDateException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.recurring_transactions.RecurringTransactionAlreadyActiveException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.recurring_transactions.RecurringTransactionAlreadyInactiveException;
+import com.gabriellabritz.build_finance_api.infra.exceptions.recurring_transactions.RecurringTransactionNotFoundException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.transactions.TransactionNotFoundException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.transactions.TransactionTypeMismatchException;
 import com.gabriellabritz.build_finance_api.infra.exceptions.two_factor_auth.InvalidA2FCodeException;
@@ -176,6 +180,38 @@ public class GlobalHandlerExceptions {
     public ProblemDetail handleTransactionNotFoundException(TransactionNotFoundException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
         problemDetail.setTitle("Transação não encontrada.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(InvalidRecurringTransactionDateException.class)
+    public ProblemDetail handleInvalidRecurringTransactionDateException(InvalidRecurringTransactionDateException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        problemDetail.setTitle("Data da transação recorrente inválida.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(RecurringTransactionNotFoundException.class)
+    public ProblemDetail handleRecurringTransactionNotFoundException(RecurringTransactionNotFoundException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        problemDetail.setTitle("Transação não encontrada.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(RecurringTransactionAlreadyInactiveException.class)
+    public ProblemDetail handleRecurringTransactionAlreadyInactiveException(RecurringTransactionAlreadyInactiveException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problemDetail.setTitle("Transação já desativada.");
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(RecurringTransactionAlreadyActiveException.class)
+    public ProblemDetail handleRecurringTransactionAlreadyActiveException(RecurringTransactionAlreadyActiveException exception) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        problemDetail.setTitle("Transação já ativa.");
 
         return problemDetail;
     }
