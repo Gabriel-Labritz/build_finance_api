@@ -7,6 +7,8 @@ import com.gabriellabritz.build_finance_api.domain.recurring_transactions.dtos.r
 import com.gabriellabritz.build_finance_api.domain.recurring_transactions.dtos.response.RecurringTransactionDetailsResponseDto;
 import com.gabriellabritz.build_finance_api.domain.recurring_transactions.dtos.response.RecurringTransactionResponseDto;
 import com.gabriellabritz.build_finance_api.domain.recurring_transactions.enums.Frequency;
+import com.gabriellabritz.build_finance_api.domain.transactions.Transaction;
+import com.gabriellabritz.build_finance_api.domain.transactions.TransactionRepository;
 import com.gabriellabritz.build_finance_api.domain.transactions.enums.TransactionType;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.infra.exceptions.categories.CategoryNotFoundException;
@@ -15,6 +17,7 @@ import com.gabriellabritz.build_finance_api.infra.exceptions.transactions.Transa
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,10 +26,16 @@ import java.util.UUID;
 public class RecurringTransactionService {
     private final RecurringTransactionRepository recurringTransactionRepository;
     private final CategoryRepository categoryRepository;
+    private final TransactionRepository transactionRepository;
 
-    public RecurringTransactionService(RecurringTransactionRepository recurringTransactionRepository, CategoryRepository categoryRepository) {
+    public RecurringTransactionService(
+            RecurringTransactionRepository recurringTransactionRepository,
+            CategoryRepository categoryRepository,
+            TransactionRepository transactionRepository
+    ) {
         this.recurringTransactionRepository = recurringTransactionRepository;
         this.categoryRepository = categoryRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -112,6 +121,31 @@ public class RecurringTransactionService {
     public void activateRecurringTransaction(UUID id, User userLogged) {
         RecurringTransaction recurringTransaction = getRecurringTransaction(id, userLogged.getId());
         recurringTransaction.activate();
+    }
+
+    @Transactional
+    public void processRecurringTransaction() {
+        List<RecurringTransaction> recurringTransactions = recurringTransactionRepository
+                .findByActiveTrueAndNextExecutionDateLessThanEqual(LocalDate.now());
+
+        recurringTransactions.forEach(recurringTransaction -> {
+            if (recurringTransaction.getEndDate() != null
+                    && recurringTransaction.getNextExecutionDate().isAfter(recurringTransaction.getEndDate())) {
+                recurringTransaction.disable();
+                return;
+            }
+
+            transactionRepository.save(new Transaction(
+                    recurringTransaction.getType(),
+                    recurringTransaction.getAmount(),
+                    recurringTransaction.getCategory(),
+                    recurringTransaction.getUser(),
+                    recurringTransaction.getNextExecutionDate(),
+                    recurringTransaction.getDescription()
+            ));
+
+            recurringTransaction.advanceNextDueDate();
+        });
     }
 
     private RecurringTransaction getRecurringTransaction(UUID id, UUID userId) {

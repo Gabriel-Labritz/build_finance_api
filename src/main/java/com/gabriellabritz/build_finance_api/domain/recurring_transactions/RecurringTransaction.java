@@ -129,4 +129,14 @@ public class RecurringTransaction {
         Optional.ofNullable(frequency).ifPresent(value -> this.frequency = value);
         Optional.ofNullable(endDate).ifPresent(value -> this.endDate = value);
     }
+
+    public void advanceNextDueDate() {
+        this.lastExecutionDate = this.nextExecutionDate;
+        this.nextExecutionDate = switch (this.frequency) {
+            case DAILY -> this.nextExecutionDate.plusDays(1);
+            case WEEKLY -> this.nextExecutionDate.plusWeeks(1);
+            case MONTHLY -> this.nextExecutionDate.plusMonths(1);
+            case YEARLY -> this.nextExecutionDate.plusYears(1);
+        };
+    }
 }

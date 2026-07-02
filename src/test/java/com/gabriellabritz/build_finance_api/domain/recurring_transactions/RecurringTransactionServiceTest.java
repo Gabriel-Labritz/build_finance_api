@@ -7,6 +7,8 @@ import com.gabriellabritz.build_finance_api.domain.recurring_transactions.dtos.r
 import com.gabriellabritz.build_finance_api.domain.recurring_transactions.dtos.request.UpdateRecurringTransactionRequestDto;
 import com.gabriellabritz.build_finance_api.domain.recurring_transactions.dtos.response.RecurringTransactionResponseDto;
 import com.gabriellabritz.build_finance_api.domain.recurring_transactions.enums.Frequency;
+import com.gabriellabritz.build_finance_api.domain.transactions.Transaction;
+import com.gabriellabritz.build_finance_api.domain.transactions.TransactionRepository;
 import com.gabriellabritz.build_finance_api.domain.transactions.enums.TransactionType;
 import com.gabriellabritz.build_finance_api.domain.user.User;
 import com.gabriellabritz.build_finance_api.infra.exceptions.categories.CategoryNotFoundException;
@@ -59,6 +61,12 @@ class RecurringTransactionServiceTest {
 
     @Captor
     private ArgumentCaptor<RecurringTransaction> recurringTransactionArgumentCaptor;
+
+    @Mock
+    private TransactionRepository transactionRepository;
+
+    @Captor
+    private ArgumentCaptor<Transaction> transactionArgumentCaptor;
 
     @BeforeEach
     void setUp() {
@@ -657,6 +665,111 @@ class RecurringTransactionServiceTest {
                     Frequency.YEARLY,
                     date
             );
+        }
+    }
+
+    @Nested
+    class processRecurringTransaction {
+        @Test
+        @DisplayName("Deve criar a transação e avançar a data sem desativa - la.")
+        void shouldCreateTheTransactionAndAdvanceTheDateWithoutDeactivatingIt() {
+            // Arrange
+            when(recurringTransactionRepository.findByActiveTrueAndNextExecutionDateLessThanEqual(LocalDate.now()))
+                    .thenReturn(List.of(recurringTransactionMock));
+            when(recurringTransactionMock.getEndDate()).thenReturn(null);
+            when(recurringTransactionMock.getType()).thenReturn(TransactionType.EXPENSE);
+            when(recurringTransactionMock.getAmount()).thenReturn(new BigDecimal("100.00"));
+            when(recurringTransactionMock.getCategory()).thenReturn(category);
+            when(recurringTransactionMock.getUser()).thenReturn(user);
+            when(recurringTransactionMock.getNextExecutionDate()).thenReturn(LocalDate.now());
+            when(recurringTransactionMock.getDescription()).thenReturn("Descrição");
+
+            // Act
+            recurringTransactionService.processRecurringTransaction();
+
+            // Assert
+            verify(recurringTransactionMock, never()).disable();
+            verify(transactionRepository).save(transactionArgumentCaptor.capture());
+            verify(recurringTransactionMock).advanceNextDueDate();
+
+            Transaction transactionCaptured = transactionArgumentCaptor.getValue();
+
+            assertEquals(TransactionType.EXPENSE, transactionCaptured.getType());
+            assertEquals(new BigDecimal("100.00"), transactionCaptured.getAmount());
+            assertEquals(category, transactionCaptured.getCategory());
+            assertEquals(LocalDate.now(), transactionCaptured.getDate());
+            assertEquals("Descrição", transactionCaptured.getDescription());
+        }
+
+        @Test
+        @DisplayName("Deve desativar a transação quando a próxima data de execução for depois da data final.")
+        void shouldDisableTheRecurringTransactionWhenNextExecutionDateIsAfterThanFinalDate() {
+            // Arrange
+            when(recurringTransactionRepository.findByActiveTrueAndNextExecutionDateLessThanEqual(LocalDate.now()))
+                    .thenReturn(List.of(recurringTransactionMock));
+            when(recurringTransactionMock.getEndDate()).thenReturn(LocalDate.of(2026, 7, 2));
+            when(recurringTransactionMock.getNextExecutionDate()).thenReturn(LocalDate.of(2026, 8, 3));
+
+            // Act
+            recurringTransactionService.processRecurringTransaction();
+
+            // Assert
+            verify(recurringTransactionMock).disable();
+            verify(transactionRepository, never()).save(any());
+            verify(recurringTransactionMock, never()).advanceNextDueDate();
+        }
+
+        @Test
+        @DisplayName("Não deve processar nenhuma transação quando não houver recorrências vencidas.")
+        void shouldNotProcessAnyTransactionsWhenThereAreNoOverdueRecurringPayments() {
+            // Arrange
+            when(recurringTransactionRepository.findByActiveTrueAndNextExecutionDateLessThanEqual(LocalDate.now()))
+                    .thenReturn(List.of());
+
+            // Act
+            recurringTransactionService.processRecurringTransaction();
+
+            // Assert
+            verify(recurringTransactionMock, never()).disable();
+            verify(transactionRepository, never()).save(any());
+            verify(recurringTransactionMock, never()).advanceNextDueDate();
+        }
+
+        @Test
+        @DisplayName("Deve processar corretamente uma lista com transações dentro e fora do prazo.")
+        void shouldCorrectlyProcessAListContainingTransactionsThatAreBothWithinAndPastTheDeadline() {
+            // Arrange
+            RecurringTransaction recurringTransactionMock2 = mock(RecurringTransaction.class);
+            when(recurringTransactionRepository.findByActiveTrueAndNextExecutionDateLessThanEqual(LocalDate.now()))
+                    .thenReturn(List.of(recurringTransactionMock, recurringTransactionMock2));
+            when(recurringTransactionMock.getEndDate()).thenReturn(null);
+            when(recurringTransactionMock.getType()).thenReturn(TransactionType.EXPENSE);
+            when(recurringTransactionMock.getAmount()).thenReturn(new BigDecimal("100.00"));
+            when(recurringTransactionMock.getCategory()).thenReturn(category);
+            when(recurringTransactionMock.getUser()).thenReturn(user);
+            when(recurringTransactionMock.getNextExecutionDate()).thenReturn(LocalDate.now());
+            when(recurringTransactionMock.getDescription()).thenReturn("Descrição");
+            when(recurringTransactionMock2.getEndDate()).thenReturn(LocalDate.of(2026, 7, 2));
+            when(recurringTransactionMock2.getNextExecutionDate()).thenReturn(LocalDate.of(2026, 8, 3));
+
+            // Act
+            recurringTransactionService.processRecurringTransaction();
+
+            // Assert
+            verify(recurringTransactionMock, never()).disable();
+            verify(recurringTransactionMock).advanceNextDueDate();
+            verify(transactionRepository, times(1)).save(transactionArgumentCaptor.capture());
+
+            Transaction transactionCaptured = transactionArgumentCaptor.getValue();
+
+            assertEquals(TransactionType.EXPENSE, transactionCaptured.getType());
+            assertEquals(new BigDecimal("100.00"), transactionCaptured.getAmount());
+            assertEquals(category, transactionCaptured.getCategory());
+            assertEquals(LocalDate.now(), transactionCaptured.getDate());
+            assertEquals("Descrição", transactionCaptured.getDescription());
+
+            verify(recurringTransactionMock2).disable();
+            verify(recurringTransactionMock2, never()).advanceNextDueDate();
         }
     }
 }
